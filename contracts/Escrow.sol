@@ -9,6 +9,7 @@ contract Escrow {
 	bool public isApproved;
 
 	constructor(address _arbiter, address _beneficiary) payable {
+		require(msg.sender == _arbiter,"Owner can not be the arbiter");
 		arbiter = _arbiter;
 		beneficiary = _beneficiary;
 		depositor = msg.sender;

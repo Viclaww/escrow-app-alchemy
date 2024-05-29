@@ -1,13 +1,22 @@
-import { ethers } from 'ethers';
-import { useEffect, useState } from 'react';
-import deploy from './deploy';
-import Escrow from './Escrow';
+import { ethers } from "ethers";
+import { useEffect, useState } from "react";
+import deploy from "./deploy";
+import Escrow from "./Escrow";
 
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 
 export async function approve(escrowContract, signer) {
-  const approveTxn = await escrowContract.connect(signer).approve();
-  await approveTxn.wait();
+  try {
+    const gasLimit = 100000;
+    const approveTxn = await escrowContract
+      .connect(signer)
+      .approve({ gasLimit });
+    await approveTxn.wait();
+    console.log("Transaction successful:", approveTxn);
+  } catch (error) {
+    console.error("Approval transaction failed:", error);
+    alert(`Approval failed: ${error.message}`);
+  }
 }
 
 function App() {
@@ -15,23 +24,20 @@ function App() {
   const [account, setAccount] = useState();
   const [signer, setSigner] = useState();
 
-  useEffect(() => {
-    async function getAccounts() {
-      const accounts = await provider.send('eth_requestAccounts', []);
+  async function getAccounts() {
+    const accounts = await provider.send("eth_requestAccounts", []);
 
-      setAccount(accounts[0]);
-      setSigner(provider.getSigner());
-    }
-
-    getAccounts();
-  }, [account]);
+    setAccount(accounts[0]);
+    setSigner(provider.getSigner());
+  }
 
   async function newContract() {
-    const beneficiary = document.getElementById('beneficiary').value;
-    const arbiter = document.getElementById('arbiter').value;
-    const value = ethers.BigNumber.from(document.getElementById('wei').value);
+    const beneficiary = document.getElementById("beneficiary").value;
+    const arbiter = document.getElementById("arbiter").value;
+    const value = ethers.utils.parseEther(
+      `${document.getElementById("ether").value}`
+    );
     const escrowContract = await deploy(signer, arbiter, beneficiary, value);
-
 
     const escrow = {
       address: escrowContract.address,
@@ -39,9 +45,9 @@ function App() {
       beneficiary,
       value: value.toString(),
       handleApprove: async () => {
-        escrowContract.on('Approved', () => {
+        escrowContract.on("Approved", () => {
           document.getElementById(escrowContract.address).className =
-            'complete';
+            "complete";
           document.getElementById(escrowContract.address).innerText =
             "✓ It's been approved!";
         });
@@ -68,8 +74,8 @@ function App() {
         </label>
 
         <label>
-          Deposit Amount (in Wei)
-          <input type="text" id="wei" />
+          Deposit Amount (ether)
+          <input type="text" id="ether" />
         </label>
 
         <div
@@ -77,7 +83,7 @@ function App() {
           id="deploy"
           onClick={(e) => {
             e.preventDefault();
-
+            console.log("new contract");
             newContract();
           }}
         >
@@ -85,6 +91,11 @@ function App() {
         </div>
       </div>
 
+      <div className="contract">
+        <button onClick={getAccounts} className="button">
+          Connect Wallet
+        </button>
+      </div>
       <div className="existing-contracts">
         <h1> Existing Contracts </h1>
 
