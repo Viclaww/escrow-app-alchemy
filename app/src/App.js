@@ -20,7 +20,9 @@ export async function approve(escrowContract, signer) {
 }
 
 function App() {
-  const [escrows, setEscrows] = useState([]);
+  const [escrows, setEscrows] = useState(
+    JSON.parse(localStorage.getItem("escrows")) || []
+  );
   const [account, setAccount] = useState();
   const [signer, setSigner] = useState();
 
@@ -55,14 +57,18 @@ function App() {
         await approve(escrowContract, signer);
       },
     };
-
-    setEscrows([...escrows, escrow]);
+    const newEscrows = [...escrows, escrow];
+    localStorage.setItem("escrows", JSON.stringify(newEscrows));
+    setEscrows(newEscrows);
   }
+
+  console.log(account[0]);
 
   return (
     <>
       <div className="contract">
         <h1> New Contract </h1>
+        <span>User</span>
         <label>
           Arbiter Address
           <input type="text" id="arbiter" />
